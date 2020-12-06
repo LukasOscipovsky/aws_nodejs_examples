@@ -1,0 +1,54 @@
+service: aws-nodejs-examples
+frameworkVersion: '2'
+
+custom:
+  settings:
+    LUKAS_TABLE: USERS_TABLE2
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment: ${self:custom.settings}
+  region: eu-central-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.LUKAS_TABLE}"
+
+functions:
+  createItem:
+    handler: handler.createItem
+    events:
+      - http:
+          path: /create
+          method: post
+  getItems:
+    handler: handler.getAllItems
+    events:
+      - http:
+          path: /items
+          method: get
+
+resources:
+  Resources:
+    LukasTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.LUKAS_TABLE}
+
